@@ -2,59 +2,64 @@ import argparse
 import socket
 import sys
 
-def main():
-    # Parsiranje argumenata
-    parser = argparse.ArgumentParser(description="Dohvati IP adresu, CNAME i broj porta usluge")
-    parser.add_argument("hostname", help="Ime računala")
-    parser.add_argument("servicename", help="Naziv usluge")
-    parser.add_argument("-u", "--udp", action="store_true", help="Koristi UDP protokol (TCP je pretpostavljen)")
-    parser.add_argument("-x", "--hex", action="store_true", help="Ispisi broj porta u heksadecimalnom obliku")
-    parser.add_argument("-n", "--network", action="store_true", help="Prikaži broj porta u network byte redoslijedu")
-    args = parser.parse_args()
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Simple Python script for working with TCP/UDP and byte order")
 
-    if len(sys.argv) == 1:
-        print("Uporaba:")
-        print("  getaddrinfo.py [-t|-u] [-x] [-h|-n] hostname servicename")
-        print("Opcije:")
-        print("  -t, --tcp         Koristi TCP protokol (TCP je pretpostavljen)")
-        print("  -u, --udp         Koristi UDP protokol")
-        print("  -x, --hex         Ispisi broj porta u heksadecimalnom obliku")
-        print("  -n, --network     Prikaži broj porta u network byte redoslijedu")
-        sys.exit()
+    # Optional arguments
+    parser.add_argument('-t', action='store_true', help='Use TCP (default)')
+    parser.add_argument('-u', action='store_true', help='Use UDP')
+    parser.add_argument('-x', action='store_true', help='Use hex (4 hex digits, 2 bytes)')
+    parser.add_argument('-H', action='store_true', help='Use host byte order (default)')
+    parser.add_argument('-n', action='store_true', help='Use network byte order')
 
-    # Dohvati informacije o servisu
+    # Positional arguments
+    parser.add_argument('hostname_or_ip', type=str, help='Hostname or IP address')
+    parser.add_argument('servicename', type=str, help='Servicename')
+
+    return parser.parse_args()
+
+def set_protocol(args):
+    return socket.SOCK_DGRAM if args.u else socket.SOCK_STREAM
+
+def set_byte_order(args):
+    return "big" if args.n else "little"
+
+def display_options(args, protocol, byte_order):
+    print(f"Hostname/IP: {args.hostname_or_ip}")
+    print(f"Servicename: {args.servicename}")
+    print(f"Protocol: {'UDP' if args.u else 'TCP'}")
+    print(f"Byte Order: {'Network' if args.n else 'Host'}")
+def get_hostname_from_ip(ip_address):
     try:
-        for info in socket.getaddrinfo(args.hostname, args.servicename, protocol=protocol):
-            address, _, _, _, port = info
-            break
-    except socket.gaierror as e:
-        print(f"Greška: {e}", file=sys.stderr)
-        sys.exit(1)
-     # Rukovanje greskama
-    if args.udp:
-        if args.tcp:
-            print("Greška: Mogu se koristiti samo jedna od opcija -t i -u", file=sys.stderr)
-            sys.exit(1)
-        if args.hex and args.network:
-            print("Greška: Mogu se koristiti samo jedna od opcija -x i -n", file=sys.stderr)
-            sys.exit(1)
-    if info is None:
-        print("Greška: Ne postoji adresa za navedene parametre", file=sys.stderr)
-        sys.exit(1)
+        hostname, _, _ = socket.gethostbyaddr(ip_address)
+        return hostname
+    except socket.herror:
+        return None
 
-    # Transportni protokol
-    protocol = socket.AF_INET if not args.udp else socket.AF_INET6
+def main():
+    args = parse_arguments()
+    protocol = set_protocol(args)
+    byte_order = set_byte_order(args)
+    display_options(args, protocol, byte_order)
 
-    # Ispisi IP adresu i CNAME
-    if address:
-        print(f"{address[0]} {socket.gethostbyaddr(address)[0]}", end=" ")
+    if args.hostname_or_ip:
+        if args.hostname_or_ip.replace('.', '').isdigit():
+            # Input is an IP address, try to get the corresponding hostname
+            hostname = get_hostname_from_ip(args.hostname_or_ip)
+            if hostname:
+                print(f"Corresponding hostname: {hostname}")
+                args.hostname_or_ip = hostname
 
-    # Formatiranje porta
-    port_format = "x" if args.hex else "d"
-    byte_order = "!" if args.network else ""
+    try:
+        ip_address = socket.gethostbyname(args.hostname_or_ip)
+        canonical_name, _, _ = socket.gethostbyaddr(ip_address)
+        print(f"{ip_address} ({canonical_name}) {args.servicename}")
+    except socket.herror as e:
+        print(f"Error: {e}")
 
-    # Ispisi broj porta
-    print(f"{port:{port_format}{byte_order}}")
+    # You can add more logic here based on your program requirements
+
+    sys.exit(0)  # Exit with success
 
 if __name__ == "__main__":
     main()
