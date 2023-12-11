@@ -29,6 +29,18 @@ def display_options(args, protocol, byte_order):
     print(f"Servicename: {args.servicename}")
     print(f"Protocol: {'UDP' if args.u else 'TCP'}")
     print(f"Byte Order: {'Network' if args.n else 'Host'}")
+
+    try:
+        port_number = socket.getservbyname(args.servicename)
+    except socket.error:
+        print(f"Error: Invalid servicename")
+        sys.exit(1)
+
+    if args.x:
+        hex_data = format(port_number, '04X')  # Assuming 4 hex digits, 2 bytes
+        print(f"Port number: {hex_data}")
+    else:
+        print(f"Port number: {port_number}")
 def get_hostname_from_ip(ip_address):
     try:
         hostname, _, _ = socket.gethostbyaddr(ip_address)
