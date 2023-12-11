@@ -37,7 +37,7 @@ def display_options(args, protocol, byte_order):
         sys.exit(1)
 
     if args.x:
-        hex_data = format(port_number, '04X')  # Assuming 4 hex digits, 2 bytes
+        hex_data = format(port_number, '04X')  
         print(f"Port number: {hex_data}")
     else:
         print(f"Port number: {port_number}")
@@ -56,7 +56,7 @@ def main():
 
     if args.hostname_or_ip:
         if args.hostname_or_ip.replace('.', '').isdigit():
-            # Input is an IP address, try to get the corresponding hostname
+            # Ako je input IP, pronadji hostname
             hostname = get_hostname_from_ip(args.hostname_or_ip)
             if hostname:
                 print(f"Corresponding hostname: {hostname}")
@@ -69,9 +69,9 @@ def main():
     except socket.herror as e:
         print(f"Error: {e}")
 
-    # You can add more logic here based on your program requirements
+    
 
-    sys.exit(0)  # Exit with success
+    sys.exit(0)  
 
 if __name__ == "__main__":
     main()
