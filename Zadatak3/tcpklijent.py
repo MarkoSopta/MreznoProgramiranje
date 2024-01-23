@@ -1,5 +1,13 @@
+import argparse
 import socket
-import sys
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='TCP klijent')
+    parser.add_argument('server_ip', help='IP adresa ili naziv poslužitelja')
+    parser.add_argument('-p', '--port', type=int, default=1234, help='Broj porta poslužitelja')
+    return parser.parse_args()
+
 
 def tcp_client(server_ip, port):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,18 +28,7 @@ def tcp_client(server_ip, port):
     finally:
         client_socket.close()
 
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or len(sys.argv) > 5 or ('-p' in sys.argv and len(sys.argv) != 4):
-        print("Usage: python tcpklijent.py [-p port] server_IP")
-        sys.exit(1)
-
-    server_ip = sys.argv[-1]
-    port = 1234
-    if '-p' in sys.argv:
-        port_index = sys.argv.index('-p')
-        try:
-            port = int(sys.argv[port_index + 1])
-        except (IndexError, ValueError):
-            print("Neispravna vrijednost za port. Koristi se pretpostavljeni port 1234.")
-
-    tcp_client(server_ip, port)
+    args = parse_arguments()
+    tcp_client(args.server_ip, args.port)

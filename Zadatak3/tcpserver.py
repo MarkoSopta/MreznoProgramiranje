@@ -1,5 +1,12 @@
+import argparse
 import socket
-import sys
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='TCP poslužitelj')
+    parser.add_argument('-p', '--port', type=int, default=1234, help='Broj porta poslužitelja')
+    return parser.parse_args()
+
 
 def tcp_server(port):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,7 +21,7 @@ def tcp_server(port):
             connection, client_address = server_socket.accept()
             try:
                 print("Klijent povezan:", client_address)
-                filename = connection.recv().decode('utf-8')
+                filename = connection.recv(4096).decode('utf-8')
                 if filename == 'Kraj':
                     print("Primljen signal za završetak. Završavam s radom.")
                     break
@@ -27,8 +34,6 @@ def tcp_server(port):
                 except FileNotFoundError:
                     print(f"Datoteka '{filename}' ne postoji. Slanje poruke o grešci.")
                     connection.sendall("Datoteka ne postoji.".encode('utf-8'))
-                except Exception as e:
-                    print(f"Greška prilikom obrade klijentskog zahtjeva: {e}")
 
             finally:
                 connection.close()
@@ -38,13 +43,7 @@ def tcp_server(port):
     finally:
         server_socket.close()
 
-if __name__ == "__main__":
-    port = 1234
-    if '-p' in sys.argv:
-        port_index = sys.argv.index('-p')
-        try:
-            port = int(sys.argv[port_index + 1])
-        except (IndexError, ValueError):
-            print("Neispravna vrijednost za port. Koristi se pretpostavljeni port 1234.")
 
-    tcp_server(port)
+if __name__ == "__main__":
+    args = parse_arguments()
+    tcp_server(args.port)
